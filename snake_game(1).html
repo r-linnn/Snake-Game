@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>贪吃蛇游戏 v2.0</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #0a0a1a;
+    color: #e0e0e0;
+    font-family: 'Courier New', monospace;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ===== 页面切换 ===== */
+  .page { display: none; width: 100%; }
+  .page.active { display: flex; }
+
+  /* ===== 主菜单 ===== */
+  #page-menu {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    gap: 0;
+  }
+
+  .title-box {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+  .title-box h1 {
+    font-size: 2.8rem;
+    color: #4eff91;
+    text-shadow: 0 0 20px #4eff9180;
+    letter-spacing: 4px;
+    margin-bottom: 6px;
+  }
+  .title-box .version { color: #888; font-size: 0.9rem; }
+
+  .user-badge {
+    background: #1a1a3a;
+    border: 1px solid #4eff9150;
+    border-radius: 20px;
+    padding: 6px 18px;
+    color: #4eff91;
+    font-size: 0.85rem;
+    margin-bottom: 24px;
+    display: none;
+  }
+  .user-badge.show { display: inline-block; }
+
+  .menu-list {
+    list-style: none;
+    width: 280px;
+  }
+  .menu-list li {
+    margin: 10px 0;
+  }
+  .menu-list button {
+    width: 100%;
+    padding: 12px 0;
+    background: #0f0f2a;
+    border: 1px solid #2a2a5a;
+    border-radius: 8px;
+    color: #ccc;
+    font-family: 'Courier New', monospace;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 1px;
+  }
+  .menu-list button:hover {
+    background: #1a1a4a;
+    border-color: #4eff91;
+    color: #4eff91;
+    box-shadow: 0 0 12px #4eff9130;
+  }
+  .menu-list button.primary {
+    background: #0a2a1a;
+    border-color: #4eff91;
+    color: #4eff91;
+    font-weight: bold;
+    font-size: 1.1rem;
+  }
+  .menu-list button.primary:hover {
+    background: #4eff91;
+    color: #0a2a1a;
+    box-shadow: 0 0 20px #4eff9160;
+  }
+  .menu-list button.danger { border-color: #ff4e4e50; color: #ff8888; }
+  .menu-list button.danger:hover { border-color: #ff4e4e; color: #ff4e4e; background: #2a0a0a; box-shadow: none; }
+
+  /* ===== 表单页（登录/注册）===== */
+  #page-login, #page-register {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+  }
+
+  .form-card {
+    background: #0f0f2a;
+    border: 1px solid #2a2a5a;
+    border-radius: 12px;
+    padding: 36px 40px;
+    width: 340px;
+  }
+  .form-card h2 {
+    color: #4eff91;
+    font-size: 1.4rem;
+    margin-bottom: 24px;
+    text-align: center;
+    letter-spacing: 2px;
+  }
+  .form-group { margin-bottom: 16px; }
+  .form-group label {
+    display: block;
+    color: #888;
+    font-size: 0.82rem;
+    margin-bottom: 6px;
+    letter-spacing: 1px;
+  }
+  .form-group input {
+    width: 100%;
+    padding: 10px 14px;
+    background: #0a0a1a;
+    border: 1px solid #2a2a5a;
+    border-radius: 6px;
+    color: #e0e0e0;
+    font-family: 'Courier New', monospace;
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .form-group input:focus { border-color: #4eff91; }
+  .form-error {
+    color: #ff6b6b;
+    font-size: 0.82rem;
+    margin-top: 4px;
+    min-height: 18px;
+  }
+  .form-actions { margin-top: 24px; display: flex; gap: 10px; }
+  .form-actions button {
+    flex: 1;
+    padding: 11px 0;
+    border-radius: 6px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-submit {
+    background: #0a2a1a;
+    border: 1px solid #4eff91;
+    color: #4eff91;
+  }
+  .btn-submit:hover { background: #4eff91; color: #0a2a1a; }
+  .btn-cancel {
+    background: transparent;
+    border: 1px solid #2a2a5a;
+    color: #888;
+  }
+  .btn-cancel:hover { border-color: #888; color: #ccc; }
+
+  /* ===== 游戏页 ===== */
+  #page-game {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    gap: 12px;
+  }
+
+  .game-header {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    width: 100%;
+    max-width: 620px;
+    padding: 0 4px;
+  }
+  .score-box {
+    background: #0f0f2a;
+    border: 1px solid #2a2a5a;
+    border-radius: 8px;
+    padding: 8px 20px;
+    text-align: center;
+    flex: 1;
+  }
+  .score-box .label { color: #888; font-size: 0.72rem; letter-spacing: 1px; }
+  .score-box .value { color: #4eff91; font-size: 1.4rem; font-weight: bold; margin-top: 2px; }
+
+  #canvas-snake {
+    border: 2px solid #2a2a5a;
+    border-radius: 4px;
+    background: #050510;
+    display: block;
+    box-shadow: 0 0 30px #4eff9115;
+  }
+
+  .game-hint {
+    color: #555;
+    font-size: 0.78rem;
+    letter-spacing: 1px;
+    text-align: center;
+  }
+
+  /* ===== 游戏结束遮罩 ===== */
+  #overlay-gameover {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: #00000090;
+    backdrop-filter: blur(4px);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+  #overlay-gameover.show { display: flex; }
+
+  .gameover-card {
+    background: #0f0f2a;
+    border: 1px solid #4eff9150;
+    border-radius: 12px;
+    padding: 40px 50px;
+    text-align: center;
+    box-shadow: 0 0 40px #4eff9120;
+  }
+  .gameover-card h2 { color: #ff6b6b; font-size: 2rem; margin-bottom: 8px; }
+  .gameover-card .final-score { color: #4eff91; font-size: 1.8rem; font-weight: bold; margin: 16px 0 4px; }
+  .gameover-card .best-score { color: #888; font-size: 0.9rem; margin-bottom: 24px; }
+  .gameover-card .record-tip { color: #ffd700; font-size: 0.9rem; margin-bottom: 20px; }
+  .gameover-btn-group { display: flex; gap: 12px; justify-content: center; }
+  .gameover-btn-group button {
+    padding: 10px 28px;
+    border-radius: 6px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-replay { background: #0a2a1a; border: 1px solid #4eff91; color: #4eff91; }
+  .btn-replay:hover { background: #4eff91; color: #0a2a1a; }
+  .btn-tomenu { background: transparent; border: 1px solid #2a2a5a; color: #888; }
+  .btn-tomenu:hover { border-color: #aaa; color: #ccc; }
+
+  /* ===== 排行榜 ===== */
+  #page-ranking {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 30px 20px;
+  }
+
+  .ranking-card {
+    background: #0f0f2a;
+    border: 1px solid #2a2a5a;
+    border-radius: 12px;
+    padding: 32px 36px;
+    width: 100%;
+    max-width: 520px;
+  }
+  .ranking-card h2 {
+    color: #4eff91;
+    font-size: 1.4rem;
+    text-align: center;
+    margin-bottom: 24px;
+    letter-spacing: 2px;
+  }
+  .ranking-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .ranking-table th {
+    color: #666;
+    font-size: 0.78rem;
+    padding: 6px 10px;
+    text-align: left;
+    letter-spacing: 1px;
+    border-bottom: 1px solid #1a1a3a;
+  }
+  .ranking-table td {
+    padding: 10px 10px;
+    font-size: 0.9rem;
+    border-bottom: 1px solid #0f0f20;
+    vertical-align: middle;
+  }
+  .ranking-table tr:hover td { background: #0a0a20; }
+  .rank-num { color: #666; font-size: 0.85rem; }
+  .rank-num.gold { color: #ffd700; font-weight: bold; font-size: 1rem; }
+  .rank-num.silver { color: #c0c0c0; font-weight: bold; }
+  .rank-num.bronze { color: #cd7f32; font-weight: bold; }
+  .rank-name { color: #e0e0e0; }
+  .rank-name.current { color: #4eff91; }
+  .rank-score { color: #4eff91; font-weight: bold; text-align: right; }
+  .rank-time { color: #555; font-size: 0.78rem; text-align: right; }
+  .no-data { color: #555; text-align: center; padding: 30px; font-size: 0.9rem; }
+
+  .back-btn {
+    margin-top: 24px;
+    padding: 10px 36px;
+    background: transparent;
+    border: 1px solid #2a2a5a;
+    border-radius: 6px;
+    color: #888;
+    font-family: 'Courier New', monospace;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .back-btn:hover { border-color: #4eff91; color: #4eff91; }
+
+  /* ===== 方向键（移动端）===== */
+  .dpad {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    margin-top: 8px;
+  }
+  .dpad-row { display: flex; gap: 4px; }
+  .dpad button {
+    width: 52px; height: 52px;
+    background: #0f0f2a;
+    border: 1px solid #2a2a5a;
+    border-radius: 8px;
+    color: #4eff91;
+    font-size: 1.3rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .dpad button:active { background: #1a3a2a; border-color: #4eff91; }
+  @media (hover: none) and (pointer: coarse) { .dpad { display: flex; } }
+
+  /* ===== 暂停遮罩 ===== */
+  #overlay-pause {
+    display: none;
+    position: absolute;
+    inset: 0;
+    background: #00000070;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    border-radius: 4px;
+    font-size: 1.8rem;
+    color: #4eff91;
+    letter-spacing: 4px;
+  }
+  #overlay-pause.show { display: flex; }
+
+  .canvas-wrap { position: relative; }
+</style>
+</head>
+<body>
+
+<!-- ============ 主菜单 ============ -->
+<div class="page active" id="page-menu">
+  <div class="title-box">
+    <h1>🐍 贪吃蛇</h1>
+    <div class="version">Snake Game v2.0</div>
+  </div>
+  <div class="user-badge" id="menu-user-badge">👤 <span id="menu-username"></span></div>
+  <ul class="menu-list">
+    <li><button class="primary" onclick="onMenuGame()">▶  开始游戏</button></li>
+    <li id="menu-li-login"><button onclick="showPage('page-login')">🔑  登录</button></li>
+    <li id="menu-li-register"><button onclick="showPage('page-register')">📝  注册</button></li>
+    <li><button onclick="showPage('page-ranking')">🏆  排行榜</button></li>
+    <li id="menu-li-logout" style="display:none"><button class="danger" onclick="onLogout()">🚪  注销</button></li>
+  </ul>
+</div>
+
+<!-- ============ 登录 ============ -->
+<div class="page" id="page-login">
+  <div class="form-card">
+    <h2>🔑 用户登录</h2>
+    <div class="form-group">
+      <label>用户名</label>
+      <input type="text" id="login-username" placeholder="输入用户名" autocomplete="off" />
+    </div>
+    <div class="form-group">
+      <label>密码</label>
+      <input type="password" id="login-password" placeholder="输入密码" />
+      <div class="form-error" id="login-error"></div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-submit" onclick="onLogin()">登 录</button>
+      <button class="btn-cancel" onclick="showPage('page-menu')">返 回</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 注册 ============ -->
+<div class="page" id="page-register">
+  <div class="form-card">
+    <h2>📝 用户注册</h2>
+    <div class="form-group">
+      <label>用户名（最多19个字符）</label>
+      <input type="text" id="reg-username" placeholder="输入用户名" autocomplete="off" maxlength="19"/>
+    </div>
+    <div class="form-group">
+      <label>密码（至少4位）</label>
+      <input type="password" id="reg-password" placeholder="输入密码" maxlength="19"/>
+    </div>
+    <div class="form-group">
+      <label>确认密码</label>
+      <input type="password" id="reg-confirm" placeholder="再次输入密码" maxlength="19"/>
+      <div class="form-error" id="reg-error"></div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-submit" onclick="onRegister()">注 册</button>
+      <button class="btn-cancel" onclick="showPage('page-menu')">返 回</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 游戏页 ============ -->
+<div class="page" id="page-game">
+  <div class="game-header">
+    <div class="score-box">
+      <div class="label">本局得分</div>
+      <div class="value" id="hud-score">0</div>
+    </div>
+    <div class="score-box">
+      <div class="label">最高记录</div>
+      <div class="value" id="hud-best">0</div>
+    </div>
+    <div class="score-box">
+      <div class="label">玩家</div>
+      <div class="value" style="font-size:1rem;color:#aaa;" id="hud-user">-</div>
+    </div>
+  </div>
+
+  <div class="canvas-wrap">
+    <canvas id="canvas-snake" width="600" height="400"></canvas>
+    <div id="overlay-pause">⏸ 暂停</div>
+  </div>
+
+  <div class="game-hint">WASD / 方向键 控制 &nbsp;|&nbsp; 空格 暂停 &nbsp;|&nbsp; ESC 返回菜单</div>
+
+  <!-- 手机端方向键 -->
+  <div class="dpad">
+    <div class="dpad-row"><button onclick="dpadDir('w')">▲</button></div>
+    <div class="dpad-row">
+      <button onclick="dpadDir('a')">◀</button>
+      <button onclick="dpadDir('s')">▼</button>
+      <button onclick="dpadDir('d')">▶</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 排行榜 ============ -->
+<div class="page" id="page-ranking">
+  <div class="ranking-card">
+    <h2>🏆 排行榜 TOP 10</h2>
+    <table class="ranking-table">
+      <thead>
+        <tr>
+          <th>排名</th>
+          <th>用户名</th>
+          <th style="text-align:right">最高分</th>
+          <th style="text-align:right">最后游戏</th>
+        </tr>
+      </thead>
+      <tbody id="ranking-tbody"></tbody>
+    </table>
+  </div>
+  <button class="back-btn" onclick="showPage('page-menu')">← 返回菜单</button>
+</div>
+
+<!-- ============ 游戏结束遮罩 ============ -->
+<div id="overlay-gameover">
+  <div class="gameover-card">
+    <h2>Game Over!</h2>
+    <div class="final-score" id="go-score">0</div>
+    <div class="best-score" id="go-best">最高记录: 0</div>
+    <div class="record-tip" id="go-record-tip"></div>
+    <div class="gameover-btn-group">
+      <button class="btn-replay" onclick="onReplay()">🔄 再来一局</button>
+      <button class="btn-tomenu" onclick="onBackToMenu()">← 返回菜单</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  数据层 —— 用 localStorage 替代文件读写
+// ============================================================
+const DB_KEY = 'snake_game_v2_users';
+
+function loadUsers() {
+  try { return JSON.parse(localStorage.getItem(DB_KEY)) || []; }
+  catch(e) { return []; }
+}
+function saveUsers(users) {
+  localStorage.setItem(DB_KEY, JSON.stringify(users));
+}
+function findUser(username) {
+  return loadUsers().find(u => u.username === username) || null;
+}
+
+// ============================================================
+//  全局状态
+// ============================================================
+let currentUser = '';          // 当前登录用户名
+let gameState   = null;        // 游戏运行对象
+let rafId       = null;        // requestAnimationFrame id
+
+// ============================================================
+//  页面切换
+// ============================================================
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+
+  if (id === 'page-menu')    refreshMenu();
+  if (id === 'page-ranking') renderRanking();
+  if (id === 'page-game')    startGame();
+  if (id === 'page-login')   { document.getElementById('login-error').textContent=''; document.getElementById('login-username').value=''; document.getElementById('login-password').value=''; }
+  if (id === 'page-register'){ document.getElementById('reg-error').textContent=''; document.getElementById('reg-username').value=''; document.getElementById('reg-password').value=''; document.getElementById('reg-confirm').value=''; }
+}
+
+function refreshMenu() {
+  const badge   = document.getElementById('menu-user-badge');
+  const uname   = document.getElementById('menu-username');
+  const liLogin = document.getElementById('menu-li-login');
+  const liReg   = document.getElementById('menu-li-register');
+  const liLogout= document.getElementById('menu-li-logout');
+
+  if (currentUser) {
+    badge.classList.add('show');
+    uname.textContent = currentUser;
+    liLogin.style.display  = 'none';
+    liReg.style.display    = 'none';
+    liLogout.style.display = 'list-item';
+  } else {
+    badge.classList.remove('show');
+    liLogin.style.display  = 'list-item';
+    liReg.style.display    = 'list-item';
+    liLogout.style.display = 'none';
+  }
+}
+
+// ============================================================
+//  菜单逻辑
+// ============================================================
+function onMenuGame() {
+  if (!currentUser) {
+    alert('请先登录，才能开始游戏并保存分数！\n（可点"登录"或"注册"）');
+    return;
+  }
+  showPage('page-game');
+}
+
+function onLogout() {
+  currentUser = '';
+  refreshMenu();
+}
+
+// ============================================================
+//  登录
+// ============================================================
+function onLogin() {
+  const username = document.getElementById('login-username').value.trim();
+  const password = document.getElementById('login-password').value;
+  const errEl    = document.getElementById('login-error');
+
+  if (!username) { errEl.textContent = '请输入用户名'; return; }
+  if (!password) { errEl.textContent = '请输入密码'; return; }
+
+  const user = findUser(username);
+  if (!user) { errEl.textContent = '用户不存在'; return; }
+  if (user.password !== password) { errEl.textContent = '密码错误'; return; }
+
+  currentUser = username;
+  showPage('page-menu');
+}
+
+// ============================================================
+//  注册
+// ============================================================
+function onRegister() {
+  const username = document.getElementById('reg-username').value.trim();
+  const password = document.getElementById('reg-password').value;
+  const confirm  = document.getElementById('reg-confirm').value;
+  const errEl    = document.getElementById('reg-error');
+
+  if (!username)           { errEl.textContent = '用户名不能为空'; return; }
+  if (username.length > 19){ errEl.textContent = '用户名最多19个字符'; return; }
+  if (password.length < 4) { errEl.textContent = '密码至少4位'; return; }
+  if (password !== confirm) { errEl.textContent = '两次密码不一致'; return; }
+
+  const users = loadUsers();
+  if (users.find(u => u.username === username)) {
+    errEl.textContent = '用户名已存在';
+    return;
+  }
+  if (users.length >= 100) { errEl.textContent = '用户数量已达上限'; return; }
+
+  users.push({ username, password, high_score: 0, last_play_time: Date.now() });
+  saveUsers(users);
+  currentUser = username;
+  showPage('page-menu');
+}
+
+// ============================================================
+//  排行榜渲染
+// ============================================================
+function renderRanking() {
+  const users  = loadUsers().slice().sort((a,b) => b.high_score - a.high_score).slice(0,10);
+  const tbody  = document.getElementById('ranking-tbody');
+  const medals = ['🥇','🥈','🥉'];
+  const cls    = ['gold','silver','bronze'];
+
+  if (users.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" class="no-data">暂无数据，快去游玩吧！</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = users.map((u,i) => {
+    const rankStr = i < 3 ? medals[i] : (i+1);
+    const rankCls = i < 3 ? cls[i]    : '';
+    const nameCls = u.username === currentUser ? 'rank-name current' : 'rank-name';
+    const date    = u.last_play_time ? new Date(u.last_play_time).toLocaleDateString('zh-CN', {month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—';
+    return `<tr>
+      <td><span class="rank-num ${rankCls}">${rankStr}</span></td>
+      <td><span class="${nameCls}">${escHtml(u.username)}${u.username===currentUser?' ✦':''}</span></td>
+      <td class="rank-score">${u.high_score}</td>
+      <td class="rank-time">${date}</td>
+    </tr>`;
+  }).join('');
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ============================================================
+//  游戏核心
+// ============================================================
+const COLS     = 30;   // 格子数（宽）
+const ROWS     = 20;   // 格子数（高）
+const CELL     = 20;   // 每格像素
+
+const canvas = document.getElementById('canvas-snake');
+const ctx    = canvas.getContext('2d');
+
+// 确保 canvas 尺寸
+canvas.width  = COLS * CELL;
+canvas.height = ROWS * CELL;
+
+const DIRS = {
+  w: {x:0,  y:-1},
+  s: {x:0,  y:1},
+  a: {x:-1, y:0},
+  d: {x:1,  y:0},
+  ArrowUp:    {x:0,  y:-1},
+  ArrowDown:  {x:0,  y:1},
+  ArrowLeft:  {x:-1, y:0},
+  ArrowRight: {x:1,  y:0},
+};
+
+let gs = null;   // game state shorthand
+
+function startGame() {
+  if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+
+  const user = findUser(currentUser);
+  const best = user ? user.high_score : 0;
+
+  gs = {
+    snake:     [{x: Math.floor(COLS/2), y: Math.floor(ROWS/2)},
+                {x: Math.floor(COLS/2)-1, y: Math.floor(ROWS/2)}],
+    dir:       {x:1, y:0},
+    nextDir:   {x:1, y:0},
+    food:      spawnFood([{x:Math.floor(COLS/2),y:Math.floor(ROWS/2)},{x:Math.floor(COLS/2)-1,y:Math.floor(ROWS/2)}]),
+    score:     0,
+    best:      best,
+    speed:     180,      // ms per tick
+    lastTick:  0,
+    paused:    false,
+    alive:     true,
+  };
+
+  document.getElementById('hud-score').textContent = 0;
+  document.getElementById('hud-best').textContent  = best;
+  document.getElementById('hud-user').textContent  = currentUser || '-';
+
+  document.getElementById('overlay-gameover').classList.remove('show');
+  document.getElementById('overlay-pause').classList.remove('show');
+
+  rafId = requestAnimationFrame(gameLoop);
+}
+
+function spawnFood(snake) {
+  const occupied = new Set(snake.map(s => `${s.x},${s.y}`));
+  let pos;
+  do {
+    pos = { x: Math.floor(Math.random()*COLS), y: Math.floor(Math.random()*ROWS) };
+  } while (occupied.has(`${pos.x},${pos.y}`));
+  return pos;
+}
+
+function gameLoop(ts) {
+  if (!gs || !gs.alive) return;
+  if (gs.paused) { rafId = requestAnimationFrame(gameLoop); return; }
+
+  const delta = ts - gs.lastTick;
+  if (delta >= gs.speed) {
+    gs.lastTick = ts;
+    tick();
+  }
+
+  draw();
+  if (gs.alive) rafId = requestAnimationFrame(gameLoop);
+}
+
+function tick() {
+  gs.dir = gs.nextDir;
+
+  const head = {
+    x: gs.snake[0].x + gs.dir.x,
+    y: gs.snake[0].y + gs.dir.y,
+  };
+
+  // 撞墙
+  if (head.x < 0 || head.x >= COLS || head.y < 0 || head.y >= ROWS) {
+    gameOver(); return;
+  }
+  // 撞身体
+  if (gs.snake.some(s => s.x === head.x && s.y === head.y)) {
+    gameOver(); return;
+  }
+
+  gs.snake.unshift(head);
+
+  // 吃食物
+  if (head.x === gs.food.x && head.y === gs.food.y) {
+    gs.score++;
+    document.getElementById('hud-score').textContent = gs.score;
+    gs.food = spawnFood(gs.snake);
+    if (gs.speed > 60) gs.speed = Math.max(60, gs.speed - 8);
+  } else {
+    gs.snake.pop();
+  }
+}
+
+function draw() {
+  // 背景
+  ctx.fillStyle = '#050510';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // 网格
+  ctx.strokeStyle = '#0c0c20';
+  ctx.lineWidth = 0.5;
+  for (let x = 0; x <= COLS; x++) {
+    ctx.beginPath(); ctx.moveTo(x*CELL, 0); ctx.lineTo(x*CELL, canvas.height); ctx.stroke();
+  }
+  for (let y = 0; y <= ROWS; y++) {
+    ctx.beginPath(); ctx.moveTo(0, y*CELL); ctx.lineTo(canvas.width, y*CELL); ctx.stroke();
+  }
+
+  // 食物
+  const fx = gs.food.x * CELL, fy = gs.food.y * CELL;
+  ctx.fillStyle = '#ff6b6b';
+  ctx.shadowColor = '#ff6b6b';
+  ctx.shadowBlur  = 12;
+  ctx.beginPath();
+  ctx.arc(fx + CELL/2, fy + CELL/2, CELL/2 - 2, 0, Math.PI*2);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // 蛇身
+  gs.snake.forEach((seg, i) => {
+    const sx = seg.x * CELL, sy = seg.y * CELL;
+    if (i === 0) {
+      // 蛇头
+      ctx.fillStyle = '#4eff91';
+      ctx.shadowColor = '#4eff91';
+      ctx.shadowBlur = 14;
+      roundRect(ctx, sx+1, sy+1, CELL-2, CELL-2, 5);
+      ctx.fill();
+      // 眼睛
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = '#0a2a1a';
+      const eyeOffset = 4;
+      let ex1, ey1, ex2, ey2;
+      if (gs.dir.x === 1)       { ex1=sx+CELL-6; ey1=sy+4;      ex2=sx+CELL-6; ey2=sy+CELL-7; }
+      else if (gs.dir.x === -1) { ex1=sx+3;      ey1=sy+4;      ex2=sx+3;      ey2=sy+CELL-7; }
+      else if (gs.dir.y === 1)  { ex1=sx+4;      ey1=sy+CELL-6; ex2=sx+CELL-7; ey2=sy+CELL-6; }
+      else                       { ex1=sx+4;      ey1=sy+3;      ex2=sx+CELL-7; ey2=sy+3;      }
+      ctx.fillRect(ex1, ey1, 3, 3);
+      ctx.fillRect(ex2, ey2, 3, 3);
+    } else {
+      const alpha = Math.max(0.35, 1 - i * 0.025);
+      ctx.fillStyle = `rgba(40,220,120,${alpha})`;
+      ctx.shadowBlur = 0;
+      roundRect(ctx, sx+2, sy+2, CELL-4, CELL-4, 4);
+      ctx.fill();
+    }
+  });
+  ctx.shadowBlur = 0;
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.arcTo(x+w, y,   x+w, y+h, r);
+  ctx.arcTo(x+w, y+h, x,   y+h, r);
+  ctx.arcTo(x,   y+h, x,   y,   r);
+  ctx.arcTo(x,   y,   x+w, y,   r);
+  ctx.closePath();
+}
+
+function gameOver() {
+  gs.alive = false;
+  cancelAnimationFrame(rafId); rafId = null;
+
+  // 更新分数
+  const users = loadUsers();
+  const idx   = users.findIndex(u => u.username === currentUser);
+  let isRecord = false;
+  if (idx !== -1) {
+    if (gs.score > users[idx].high_score) {
+      users[idx].high_score = gs.score;
+      isRecord = true;
+    }
+    users[idx].last_play_time = Date.now();
+    saveUsers(users);
+    gs.best = users[idx].high_score;
+  }
+
+  document.getElementById('go-score').textContent  = `得分：${gs.score}`;
+  document.getElementById('go-best').textContent   = `最高记录：${gs.best}`;
+  document.getElementById('go-record-tip').textContent = isRecord ? '🎉 新记录！' : '';
+  document.getElementById('hud-best').textContent  = gs.best;
+  document.getElementById('overlay-gameover').classList.add('show');
+}
+
+function onReplay() {
+  document.getElementById('overlay-gameover').classList.remove('show');
+  startGame();
+}
+
+function onBackToMenu() {
+  document.getElementById('overlay-gameover').classList.remove('show');
+  if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+  showPage('page-menu');
+}
+
+// ============================================================
+//  按键控制
+// ============================================================
+document.addEventListener('keydown', e => {
+  if (!gs) return;
+
+  // 暂停
+  if (e.code === 'Space') {
+    e.preventDefault();
+    if (!gs.alive) return;
+    gs.paused = !gs.paused;
+    document.getElementById('overlay-pause').classList.toggle('show', gs.paused);
+    return;
+  }
+  // ESC 返回菜单
+  if (e.code === 'Escape') {
+    onBackToMenu();
+    return;
+  }
+
+  const key = e.key;
+  const d = DIRS[key];
+  if (!d) return;
+  e.preventDefault();
+
+  // 禁止反向
+  if (d.x === -gs.dir.x && d.y === -gs.dir.y) return;
+  gs.nextDir = d;
+});
+
+function dpadDir(k) {
+  if (!gs) return;
+  const d = DIRS[k];
+  if (!d) return;
+  if (d.x === -gs.dir.x && d.y === -gs.dir.y) return;
+  gs.nextDir = d;
+}
+
+// ============================================================
+//  触摸滑动（手机）
+// ============================================================
+let touchStartX = 0, touchStartY = 0;
+canvas.addEventListener('touchstart', e => {
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+  e.preventDefault();
+}, { passive: false });
+canvas.addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  const dy = e.changedTouches[0].clientY - touchStartY;
+  if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
+  let dir;
+  if (Math.abs(dx) > Math.abs(dy)) dir = dx > 0 ? DIRS.d : DIRS.a;
+  else                               dir = dy > 0 ? DIRS.s : DIRS.w;
+  if (dir.x === -gs.dir.x && dir.y === -gs.dir.y) return;
+  gs.nextDir = dir;
+  e.preventDefault();
+}, { passive: false });
+
+// ============================================================
+//  输入框回车快捷键
+// ============================================================
+document.getElementById('login-password').addEventListener('keydown', e => { if(e.key==='Enter') onLogin(); });
+document.getElementById('reg-confirm').addEventListener('keydown', e => { if(e.key==='Enter') onRegister(); });
+</script>
+</body>
+</html>
