@@ -1,0 +1,19 @@
+# Visual Studio
+.vs/
+x64/
+Debug/
+*.user
+*.suo
+*.pdb
+*.ilk
+*.obj
+*.obj.enc
+*.idb
+*.log
+*.tlog/
+*.exe.recipe
+.Build.CppClean.log
+ipch/
+
+# User files
+*.vcxproj.user
